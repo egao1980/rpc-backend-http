@@ -3,7 +3,7 @@
   :description "HTTP POST JSON-RPC transport for rpc-protocol"
   :author "egao1980"
   :license "MIT"
-  :depends-on ("rpc-protocol" "http-protocol" "http-server-protocol")
+  :depends-on ("rpc-protocol" "http-protocol" "http-server-protocol" "babel")
   :serial t
   :pathname "src"
   :components ((:file "package")
@@ -11,7 +11,11 @@
   :in-order-to ((test-op (test-op "rpc-backend-http/tests"))))
 
 (defsystem "rpc-backend-http/tests"
-  :depends-on ("rpc-backend-http" "rove")
+  :depends-on ("rpc-backend-http"
+               "http-server-backend-hunchentoot"
+               "http-backend-dexador"
+               "rove"
+               "usocket")
   :pathname "tests"
   :serial t
   :components ((:file "package")
