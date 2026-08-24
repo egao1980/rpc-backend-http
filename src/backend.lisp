@@ -2,13 +2,21 @@
 
 (defclass http-rpc-transport (rpc-protocol:rpc-transport)
   ((url :initarg :url :initform nil :accessor transport-url)
-   (next-id :initform 0 :accessor transport-next-id)))
+   (next-id :initform 0 :accessor transport-next-id)
+   (headers :initarg :headers :initform nil :accessor transport-headers
+            :documentation "Extra request headers (alist). Precedence over defaults.")))
 
-(defun make-http-rpc-transport (&key url)
-  (make-instance 'http-rpc-transport :url url))
+(defun make-http-rpc-transport (&key url headers)
+  (make-instance 'http-rpc-transport :url url :headers headers))
 
-(defun use-http-rpc-transport (&key url)
-  (setf rpc-protocol:*rpc-transport* (make-http-rpc-transport :url url)))
+(defun use-http-rpc-transport (&key url headers)
+  (setf rpc-protocol:*rpc-transport*
+        (make-http-rpc-transport :url url :headers headers)))
+
+(defun %request-headers (transport &key (accept "application/json"))
+  (append (transport-headers transport)
+          `(("content-type" . "application/json")
+            ("accept" . ,accept))))
 
 (defun %octets-to-string (octets)
   (babel:octets-to-string octets :encoding :utf-8))
@@ -114,8 +122,7 @@
                          :code rpc-protocol:+internal-error+)))
          (res (apply #'http:post url
                      :content (rpc-protocol:encode-request method params :id id)
-                     :headers '(("content-type" . "application/json")
-                                ("accept" . "application/json"))
+                     :headers (%request-headers transport)
                      (when timeout (list :timeout timeout)))))
     (unless (<= 200 (http-protocol:response-status res) 299)
       (error 'rpc-protocol:rpc-error
@@ -134,7 +141,7 @@
                         :message "http RPC transport has no :url"
                         :code rpc-protocol:+internal-error+))
              :content (rpc-protocol:encode-notification method params)
-             :headers '(("content-type" . "application/json")))
+             :headers (%request-headers transport))
   t)
 
 (defmethod rpc-protocol:backend-rpc-serve
