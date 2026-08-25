@@ -21,6 +21,15 @@
   (ok (typep (rpc-backend-http:make-http-rpc-transport)
              'rpc-backend-http:http-rpc-transport)))
 
+(deftest extra-headers
+  (let ((tx (rpc-backend-http:make-http-rpc-transport
+             :url "http://127.0.0.1/rpc"
+             :headers '(("A2A-Version" . "1.0")
+                        ("accept" . "application/json, text/event-stream")))))
+    (ok (equal "1.0" (cdr (assoc "A2A-Version"
+                                 (rpc-backend-http:transport-headers tx)
+                                 :test #'string=))))))
+
 (deftest make-rpc-app-in-process
   (let* ((app (rpc-backend-http:make-rpc-app #'%echo :path "/rpc"))
          (body (rpc-protocol:encode-request "echo" "hi" :id 1))

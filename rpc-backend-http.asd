@@ -1,9 +1,9 @@
 (defsystem "rpc-backend-http"
-  :version "0.1.0"
+  :version "0.1.1"
   :description "HTTP POST JSON-RPC transport for rpc-protocol"
   :author "egao1980"
   :license "MIT"
-  :depends-on ("rpc-protocol" "http-protocol" "http-server-protocol" "babel")
+  :depends-on ("rpc-protocol" "rpc-protocol-json" "http-protocol" "http-server-protocol" "babel")
   :serial t
   :pathname "src"
   :components ((:file "package")
