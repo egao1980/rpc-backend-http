@@ -16,7 +16,7 @@
   :depends-on ("rpc-backend-http"
                "http-server-backend-hunchentoot"
                "http-backend-async"
-               "event-backend-libuv"
+               "http-backend-dexador"
                "event-protocol"
                "rove"
                "usocket")

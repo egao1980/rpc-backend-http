@@ -17,18 +17,32 @@
     (usocket:socket-close sock)
     port))
 
+(defun %bind-async-libuv ()
+  "Return T after binding http-backend-async × libuv, or NIL if unusable."
+  (handler-case
+      (progn
+        (asdf:load-system "event-backend-libuv")
+        (let* ((maker (find-symbol "MAKE-LIBUV-BACKEND" :event-backend-libuv))
+               (eb (funcall maker))
+               (el (event-protocol:make-event-loop eb)))
+          (setf http-backend-async:*event-backend-maker* (lambda () eb))
+          (setf event-protocol:*event-backend* eb
+                event-protocol:*event-loop* el
+                http-protocol:*http-backend* (http-backend-async:make-async-backend))
+          t))
+    (error () nil)))
+
 (defmacro with-live-http (&body body)
-  "Hunchentoot server + http-backend-async × event-backend-libuv client."
+  "Hunchentoot server + http-backend-async × libuv, else dexador."
   `(progn
      (http-server-backend-hunchentoot:use-hunchentoot-backend)
-     (let* ((eb (event-backend-libuv:make-libuv-backend))
-            (el (event-protocol:make-event-loop eb))
-            (http-backend-async:*event-backend-maker* (lambda () eb)))
-       (event-protocol:with-event-backend (eb)
-         (event-protocol:with-event-loop-var (el)
-           (let ((http-protocol:*http-backend*
-                   (http-backend-async:make-async-backend)))
-             ,@body))))))
+     (if (%bind-async-libuv)
+         (event-protocol:with-event-backend (event-protocol:*event-backend*)
+           (event-protocol:with-event-loop-var (event-protocol:*event-loop*)
+             ,@body))
+         (let ((http-protocol:*http-backend*
+                 (http-backend-dexador:make-dexador-backend)))
+           ,@body))))
 
 (defun %recv-all (stream)
   (unwind-protect
